@@ -16,6 +16,7 @@ set a min funding value */
 //constants and immutable is used to bring the gas down
 
 import "./PriceConverter.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 error notOwner();
 
@@ -25,11 +26,12 @@ contract FundMe {
     mapping(address => uint256) addressToDonation;
     address[] funders;
     address public owner;
-
-    constructor(){
+    AggregatorV3Interface private priceFeedValue;
+    constructor(address priceFeed){
+        owner = msg.sender; //the person who deploys the contract will be the owner 
+        priceFeedValue = AggregatorV3Interface(priceFeed);
         //constructor is called whenver the contract is deployed
         //same as other prog languages
-        owner = msg.sender; //the person who deploys the contract will be the owner 
     }
     function fund() public payable{
         //we want to set m in usd amount
@@ -37,7 +39,7 @@ contract FundMe {
         //use payable keyword to make it pay-able
         //msg.sender is the value added by the person making transaction or adding fund, can only be done in payable function
         //require keyword helps to maintain the condition
-        require(msg.value.getConversionRate() > minUSD,"Did not send enough");  //did not send enough is revert message
+        require(msg.value.getConversionRate(priceFeedValue) > minUSD,"Did not send enough");  //did not send enough is revert message
         funders.push(msg.sender);
         addressToDonation[msg.sender] += msg.value;
 
